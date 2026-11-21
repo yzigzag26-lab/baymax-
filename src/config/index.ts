@@ -8,6 +8,11 @@ const configSchema = z.object({
   // Database
   databaseUrl: z.string().url(),
   
+  // Supabase Configuration
+  supabaseUrl: z.string().url(),
+  supabaseAnonKey: z.string(),
+  supabaseServiceRoleKey: z.string(),
+  
   // JWT
   jwtSecret: z.string().min(32),
   jwtExpiresIn: z.string().default('7d'),

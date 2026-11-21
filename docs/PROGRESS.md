@@ -75,14 +75,14 @@ Baymax is an AI-powered website creation, redesign, hosting, and management plat
 ---
 
 ### Milestone 3: Authentication & Authorization
-**Status**: In Progress
+**Status**: Partially Complete (Email OTP pending Gmail App Password)
 **Target Date**: TBD
 
 **Completed Tasks**:
-- [x] Custom email OTP authentication system
+- [x] Custom email OTP authentication system (code complete)
 - [x] Password hashing with bcrypt (12 salt rounds)
 - [x] Custom JWT token generation and verification
-- [x] Email service with Gmail SMTP integration
+- [x] Email service with Gmail SMTP integration (code complete)
 - [x] OTP generation, expiry (5 min), and attempt tracking
 - [x] Account lockout after 3 failed attempts (1 hour)
 - [x] Rate limiting for OTP requests (3 per hour)
@@ -91,11 +91,14 @@ Baymax is an AI-powered website creation, redesign, hosting, and management plat
 - [x] Database schema updated with auth fields
 
 **Pending Tasks**:
+- [ ] **Gmail App Password** - User needs to create app password for baymaxai43@gmail.com to enable email OTP sending
 - [ ] Role-based access control (RBAC)
 - [ ] Plan tier enforcement
 - [ ] API key management (for service-to-service)
 - [ ] Password reset flow
 - [ ] Email verification resend logic
+
+**Note**: Authentication system is code-complete but requires Gmail App Password configuration to send OTP emails. Will revisit once user creates the app password.
 
 **Files Created**:
 - `src/services/auth.service.ts` - Authentication business logic
@@ -392,16 +395,39 @@ Reference: `.agents/skills/` directory for detailed guidelines
 ## Environment Variables
 See `.env.example` for required configuration.
 
+### Supabase Setup Required
+1. Create a Supabase project at https://supabase.com
+2. Get your project URL and API keys from Settings → API
+3. Get your database connection string from Settings → Database
+4. Update `.env` file with your credentials:
+   - `DATABASE_URL` - PostgreSQL connection string
+   - `SUPABASE_URL` - Project URL
+   - `SUPABASE_ANON_KEY` - Anon public key
+   - `SUPABASE_SERVICE_ROLE_KEY` - Service role key (keep secret!)
+5. Run database migrations: `npm run db:migrate`
+
+### Email Configuration Required
+1. Create a Gmail App Password for baymaxai43@gmail.com
+   - Go to Google Account → Security → 2-Step Verification → App passwords
+   - Generate app password for "Mail"
+2. Update `.env` file:
+   - `EMAIL_APP_PASSWORD` - Your Gmail App Password
+3. Test email connection after setup
+
+**Status**: ⏸️ Pending - User will provide app password later
+
 ## Next Steps
 1. ✅ Complete core API routes (websites, jobs, versions, previews)
-2. Implement plan tier enforcement and RBAC
-3. Implement actual job processors for each job type
-4. Begin AI gateway implementation
-5. Create comprehensive test suite
-6. Add billing and payment routes
-7. Add deployment and domain routes
-8. Add SEO routes
-9. Add upgrade (REA) routes
+2. ✅ Implement custom authentication (email OTP + JWT)
+3. 🔄 Set up Supabase database connection
+4. Implement plan tier enforcement and RBAC
+5. Implement actual job processors for each job type
+6. Begin AI gateway implementation
+7. Create comprehensive test suite
+8. Add billing and payment routes
+9. Add deployment and domain routes
+10. Add SEO routes
+11. Add upgrade (REA) routes
 
 ## Notes
 - All API endpoints require authentication except health check
@@ -412,4 +438,4 @@ See `.env.example` for required configuration.
 
 ---
 
-*Last Updated: 2025-11-21 (Milestone 3: Custom Authentication Complete)*
+*Last Updated: 2025-11-21 (Authentication partially complete - pending Gmail App Password)*

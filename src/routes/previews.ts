@@ -70,11 +70,36 @@ export async function previewRoutes(fastify: FastifyInstance) {
       return reply.status(404).send({ error: 'Version not found' });
     }
 
+    // Get user plan tier
+    const userPlan = await queryOne<{ plan_tier: string }>(
+      'SELECT plan_tier FROM users WHERE id = $1',
+      [user.id]
+    );
+    const planTier = (userPlan?.plan_tier || 'free') as 'free' | 'business' | 'pro';
+
+    // Set retention policy based on plan
+    let retentionPolicy: 'standard' | 'extended' | 'permanent' = 'standard';
+    let expiresAt: Date | null = null;
+
+    if (planTier === 'free') {
+      retentionPolicy = 'standard';
+      expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
+    } else if (planTier === 'business') {
+      retentionPolicy = 'extended';
+      expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days
+    } else if (planTier === 'pro') {
+      retentionPolicy = 'permanent';
+      expiresAt = null; // No expiry
+    }
+
+    // Use provided expires_at if specified, otherwise use plan-based expiry
+    const finalExpiresAt = body.expires_at ? new Date(body.expires_at) : expiresAt;
+
     const preview = await queryOne<Preview>(
-      `INSERT INTO previews (website_id, version_id, build_id, environment, url, expires_at)
-       VALUES ($1, $2, $3, $4, $5, $6)
+      `INSERT INTO previews (website_id, version_id, build_id, environment, url, expires_at, retention_policy, plan_tier)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
        RETURNING *`,
-      [websiteId, body.version_id, body.build_id || null, body.environment, body.url, body.expires_at || null]
+      [websiteId, body.version_id, body.build_id || null, body.environment, body.url, finalExpiresAt?.toISOString() || null, retentionPolicy, planTier]
     );
 
     // Log audit event

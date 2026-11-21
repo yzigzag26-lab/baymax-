@@ -1,4 +1,5 @@
 import { JobService } from '../services/job.service';
+import { PreviewCleanupService } from '../services/preview-cleanup.service';
 import { Job, JobType } from '../types';
 
 /**
@@ -9,7 +10,9 @@ import { Job, JobType } from '../types';
 export class JobProcessor {
   private isRunning = false;
   private pollInterval = 5000; // 5 seconds
+  private cleanupInterval = 3600000; // 1 hour
   private intervalId?: NodeJS.Timeout;
+  private cleanupIntervalId?: NodeJS.Timeout;
 
   /**
    * Start the job processor
@@ -30,6 +33,14 @@ export class JobProcessor {
     this.intervalId = setInterval(() => {
       this.processJobs();
     }, this.pollInterval);
+
+    // Run preview cleanup every hour
+    this.cleanupIntervalId = setInterval(() => {
+      this.runPreviewCleanup();
+    }, this.cleanupInterval);
+
+    // Run cleanup immediately on start
+    this.runPreviewCleanup();
   }
 
   /**
@@ -45,7 +56,23 @@ export class JobProcessor {
       clearInterval(this.intervalId);
       this.intervalId = undefined;
     }
+    if (this.cleanupIntervalId) {
+      clearInterval(this.cleanupIntervalId);
+      this.cleanupIntervalId = undefined;
+    }
     console.log('Job processor stopped');
+  }
+
+  /**
+   * Run preview cleanup
+   */
+  private async runPreviewCleanup(): Promise<void> {
+    try {
+      const result = await PreviewCleanupService.cleanupExpiredPreviews();
+      console.log(`Preview cleanup completed: ${result.deleted} deleted, ${result.errors} errors`);
+    } catch (error) {
+      console.error('Preview cleanup error:', error);
+    }
   }
 
   /**

@@ -220,7 +220,10 @@ export interface Preview {
   environment: string;
   url: string;
   status: 'active' | 'expired' | 'failed';
+  retention_policy: 'standard' | 'extended' | 'permanent';
+  plan_tier: PlanTier;
   expires_at?: Date;
+  deleted_at?: Date;
   created_at: Date;
 }
 
