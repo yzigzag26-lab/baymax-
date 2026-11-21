@@ -1,8 +1,10 @@
 import { FastifyInstance } from 'fastify';
 import { z } from 'zod';
 import { authMiddleware } from '../middleware/auth';
+import { planMiddleware } from '../middleware/rbac';
 import { query, queryOne } from '../db';
 import { Template, PlanTier } from '../types';
+import { canAccessTemplate } from '../services/plan.service';
 
 const templateQuerySchema = z.object({
   category: z.string().optional(),
@@ -15,7 +17,7 @@ const templateQuerySchema = z.object({
 export async function templateRoutes(fastify: FastifyInstance) {
   // Get all templates with filters
   fastify.get('/templates', {
-    preHandler: authMiddleware,
+    preHandler: [authMiddleware, planMiddleware],
     schema: {
       tags: ['Templates'],
       summary: 'Get templates',
@@ -41,11 +43,20 @@ export async function templateRoutes(fastify: FastifyInstance) {
     const queryParams = templateQuerySchema.parse(request.query);
     const { category, plan_tier, search, page, limit } = queryParams;
     const offset = (page - 1) * limit;
+    const userPlanTier = request.userPlanTier || user.plan_tier || 'free';
 
     // Build query dynamically
     let whereClause = 'WHERE is_active = true';
     const params: any[] = [];
     let paramIndex = 1;
+
+    // Filter templates based on user's plan
+    if (userPlanTier === 'free') {
+      whereClause += ` AND plan_tier = 'free'`;
+    } else if (userPlanTier === 'business') {
+      whereClause += ` AND plan_tier IN ('free', 'business')`;
+    }
+    // Pro users can see all templates
 
     if (category) {
       whereClause += ` AND category = $${paramIndex++}`;
@@ -153,7 +164,7 @@ export async function templateRoutes(fastify: FastifyInstance) {
 
   // Apply template to project
   fastify.post('/projects/:projectId/template', {
-    preHandler: authMiddleware,
+    preHandler: [authMiddleware, planMiddleware],
     schema: {
       tags: ['Templates'],
       summary: 'Apply template to project',
@@ -203,13 +214,17 @@ export async function templateRoutes(fastify: FastifyInstance) {
       return reply.status(404).send({ error: 'Template not found' });
     }
 
-    // Check plan tier access
-    const userPlanTier = (user as any).plan_tier || 'free';
-    if (template.plan_tier === 'pro' && userPlanTier !== 'pro') {
-      return reply.status(403).send({ error: 'Pro plan required for this template' });
-    }
-    if (template.plan_tier === 'business' && userPlanTier === 'free') {
-      return reply.status(403).send({ error: 'Business plan required for this template' });
+    // Check plan tier access using plan service
+    const userPlanTier = request.userPlanTier || user.plan_tier || 'free';
+    const canAccess = await canAccessTemplate(user.id, template.plan_tier);
+    
+    if (!canAccess) {
+      return reply.status(403).send({ 
+        error: 'Plan Upgrade Required',
+        message: `This template requires ${template.plan_tier} plan or higher`,
+        current_plan: userPlanTier,
+        required_plan: template.plan_tier,
+      });
     }
 
     // Update project with template (this would typically create a website record too)

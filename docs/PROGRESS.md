@@ -89,16 +89,19 @@ Baymax is an AI-powered website creation, redesign, hosting, and management plat
 - [x] Auth routes (request OTP, verify OTP, set password, login)
 - [x] Updated auth middleware for custom JWT
 - [x] Database schema updated with auth fields
+- [x] Plan tier enforcement middleware
+- [x] RBAC middleware for plan-based access control
+- [x] Plan service with entitlements configuration
+- [x] Usage tracking service
+- [x] Usage routes for statistics and limits
 
 **Pending Tasks**:
 - [ ] **Gmail App Password** - User needs to create app password for baymaxai43@gmail.com to enable email OTP sending
-- [ ] Role-based access control (RBAC)
-- [ ] Plan tier enforcement
 - [ ] API key management (for service-to-service)
 - [ ] Password reset flow
 - [ ] Email verification resend logic
 
-**Note**: Authentication system is code-complete but requires Gmail App Password configuration to send OTP emails. Will revisit once user creates the app password.
+**Note**: Authentication system is code-complete but requires Gmail App Password configuration to send OTP emails. Plan tier enforcement and RBAC are now implemented.
 
 **Files Created**:
 - `src/services/auth.service.ts` - Authentication business logic
@@ -353,6 +356,11 @@ Baymax is an AI-powered website creation, redesign, hosting, and management plat
 - `DELETE /api/v1/previews/:id` - Delete preview
 - `GET /api/v1/websites/:websiteId/previews/latest` - Get latest preview
 
+### Usage & Plans
+- `GET /api/v1/usage/stats` - Get usage statistics
+- `GET /api/v1/usage/events` - Get usage events
+- `GET /api/v1/usage/plan` - Get plan information and entitlements
+
 ## Database Schema
 
 ### Core Tables
@@ -438,4 +446,4 @@ See `.env.example` for required configuration.
 
 ---
 
-*Last Updated: 2025-11-21 (Authentication partially complete - pending Gmail App Password)*
+*Last Updated: 2025-11-21 (Plan Tier Enforcement & RBAC Complete)*

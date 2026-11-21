@@ -1,6 +1,7 @@
 import { FastifyInstance } from 'fastify';
 import { z } from 'zod';
 import { authMiddleware } from '../middleware/auth';
+import { planMiddleware, checkAIRequestLimit } from '../middleware/rbac';
 import { query, queryOne } from '../db';
 import { Job, JobStatus, JobType } from '../types';
 
@@ -126,7 +127,7 @@ export async function jobRoutes(fastify: FastifyInstance) {
 
   // Create job
   fastify.post('/jobs', {
-    preHandler: authMiddleware,
+    preHandler: [authMiddleware, planMiddleware],
     schema: {
       tags: ['Jobs'],
       summary: 'Create job',
@@ -177,6 +178,36 @@ export async function jobRoutes(fastify: FastifyInstance) {
 
       if (!project) {
         return reply.status(404).send({ error: 'Project not found' });
+      }
+    }
+
+    // Check AI request limit for AI-related jobs
+    if (['generation', 'edit', 'seo', 'upgrade'].includes(type)) {
+      const entitlements = request.userPlan;
+      if (entitlements) {
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+
+        const requestCount = await queryOne<{ count: string }>(
+          `SELECT COUNT(*) as count FROM usage_events 
+           WHERE user_id = $1 
+           AND event_type = 'ai_request' 
+           AND created_at >= $2`,
+          [user.id, today.toISOString()]
+        );
+
+        const count = parseInt(requestCount?.count || '0');
+        
+        if (count >= entitlements.max_ai_requests_per_day) {
+          return reply.status(429).send({
+            error: 'AI Request Limit Reached',
+            message: `You have reached the daily AI request limit (${entitlements.max_ai_requests_per_day}) for your plan`,
+            current_count: count,
+            max_allowed: entitlements.max_ai_requests_per_day,
+            plan_tier: entitlements.plan_tier,
+            reset_time: 'midnight UTC',
+          });
+        }
       }
     }
 

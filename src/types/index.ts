@@ -21,6 +21,7 @@ export interface User {
   otp_attempts?: number;
   otp_locked_until?: Date;
   last_otp_request_at?: Date;
+  plan_tier?: PlanTier;
   created_at: Date;
   updated_at: Date;
 }

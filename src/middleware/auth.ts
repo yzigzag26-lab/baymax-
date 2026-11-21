@@ -1,11 +1,14 @@
 import { FastifyRequest, FastifyReply } from 'fastify';
 import { verifyToken, getUserById } from '../services/auth.service';
+import { getUserPlanEntitlements, getUserPlanTier } from '../services/plan.service';
+import { PlanTier } from '../types';
 
 export interface AuthUser {
   id: string;
   email: string;
   is_verified: boolean;
   has_password: boolean;
+  plan_tier?: PlanTier;
 }
 
 declare module 'fastify' {
@@ -58,7 +61,13 @@ export const authMiddleware = async (request: FastifyRequest, reply: FastifyRepl
       });
     }
 
-    request.user = user;
+    // Get user's plan tier
+    const planTier = await getUserPlanTier(user.id);
+
+    request.user = {
+      ...user,
+      plan_tier: planTier,
+    };
   } catch (error) {
     request.log.error('Auth middleware error:', error);
     return reply.status(401).send({

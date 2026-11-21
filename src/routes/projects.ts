@@ -1,6 +1,7 @@
 import { FastifyInstance } from 'fastify';
 import { z } from 'zod';
 import { authMiddleware } from '../middleware/auth';
+import { planMiddleware, checkProjectLimit } from '../middleware/rbac';
 import { query, queryOne } from '../db';
 import { Project, PlanTier } from '../types';
 
@@ -77,7 +78,7 @@ export async function projectRoutes(fastify: FastifyInstance) {
 
   // Create new project
   fastify.post('/projects', {
-    preHandler: authMiddleware,
+    preHandler: [authMiddleware, planMiddleware, checkProjectLimit],
     schema: {
       tags: ['Projects'],
       summary: 'Create project',

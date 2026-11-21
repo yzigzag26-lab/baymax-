@@ -1,6 +1,7 @@
 import { FastifyInstance } from 'fastify';
 import { z } from 'zod';
 import { authMiddleware } from '../middleware/auth';
+import { planMiddleware, checkWebsiteLimit, requirePlan } from '../middleware/rbac';
 import { query, queryOne } from '../db';
 import { Website, BusinessProfile, WebsiteStatus } from '../types';
 
@@ -29,7 +30,7 @@ const businessProfileSchema = z.object({
 export async function websiteRoutes(fastify: FastifyInstance) {
   // Create website
   fastify.post('/websites', {
-    preHandler: authMiddleware,
+    preHandler: [authMiddleware, planMiddleware, checkWebsiteLimit],
     schema: {
       tags: ['Websites'],
       summary: 'Create website',
