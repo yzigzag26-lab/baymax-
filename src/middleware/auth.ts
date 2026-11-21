@@ -1,13 +1,11 @@
 import { FastifyRequest, FastifyReply } from 'fastify';
-import { createClient } from '@supabase/supabase-js';
-import { config } from '../config';
-
-const supabase = createClient(config.supabaseUrl, config.supabaseServiceRoleKey);
+import { verifyToken, getUserById } from '../services/auth.service';
 
 export interface AuthUser {
   id: string;
   email: string;
-  user_metadata?: Record<string, unknown>;
+  is_verified: boolean;
+  has_password: boolean;
 }
 
 declare module 'fastify' {
@@ -16,6 +14,9 @@ declare module 'fastify' {
   }
 }
 
+/**
+ * Authentication middleware - verifies JWT token and loads user
+ */
 export const authMiddleware = async (request: FastifyRequest, reply: FastifyReply) => {
   try {
     const authHeader = request.headers.authorization;
@@ -29,20 +30,35 @@ export const authMiddleware = async (request: FastifyRequest, reply: FastifyRepl
 
     const token = authHeader.substring(7);
     
-    const { data: { user }, error } = await supabase.auth.getUser(token);
+    // Verify JWT token
+    const decoded = verifyToken(token);
     
-    if (error || !user) {
+    if (!decoded) {
       return reply.status(401).send({
         error: 'Unauthorized',
         message: 'Invalid or expired token',
       });
     }
 
-    request.user = {
-      id: user.id,
-      email: user.email || '',
-      user_metadata: user.user_metadata,
-    };
+    // Load user from database
+    const user = await getUserById(decoded.userId);
+    
+    if (!user) {
+      return reply.status(401).send({
+        error: 'Unauthorized',
+        message: 'User not found',
+      });
+    }
+
+    // Check if user is verified
+    if (!user.is_verified) {
+      return reply.status(401).send({
+        error: 'Unauthorized',
+        message: 'Email not verified',
+      });
+    }
+
+    request.user = user;
   } catch (error) {
     request.log.error('Auth middleware error:', error);
     return reply.status(401).send({
@@ -52,6 +68,9 @@ export const authMiddleware = async (request: FastifyRequest, reply: FastifyRepl
   }
 };
 
+/**
+ * Optional authentication middleware - doesn't fail if no token
+ */
 export const optionalAuthMiddleware = async (request: FastifyRequest, reply: FastifyReply) => {
   try {
     const authHeader = request.headers.authorization;
@@ -61,14 +80,13 @@ export const optionalAuthMiddleware = async (request: FastifyRequest, reply: Fas
     }
 
     const token = authHeader.substring(7);
-    const { data: { user }, error } = await supabase.auth.getUser(token);
+    const decoded = verifyToken(token);
     
-    if (!error && user) {
-      request.user = {
-        id: user.id,
-        email: user.email || '',
-        user_metadata: user.user_metadata,
-      };
+    if (decoded) {
+      const user = await getUserById(decoded.userId);
+      if (user && user.is_verified) {
+        request.user = user;
+      }
     }
   } catch (error) {
     request.log.error('Optional auth middleware error:', error);

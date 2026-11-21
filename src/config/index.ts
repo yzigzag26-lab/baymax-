@@ -8,13 +8,14 @@ const configSchema = z.object({
   // Database
   databaseUrl: z.string().url(),
   
-  // Supabase
-  supabaseUrl: z.string().url(),
-  supabaseAnonKey: z.string(),
-  supabaseServiceRoleKey: z.string(),
-  
   // JWT
   jwtSecret: z.string().min(32),
+  jwtExpiresIn: z.string().default('7d'),
+  
+  // Email Configuration (Gmail SMTP)
+  emailUser: z.string().email(),
+  emailAppPassword: z.string(),
+  emailFrom: z.string().default('Baymax <baymaxai43@gmail.com>'),
   
   // CORS
   corsOrigin: z.string().default('*'),

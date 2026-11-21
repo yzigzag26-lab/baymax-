@@ -13,7 +13,16 @@ export type JobType = 'generation' | 'edit' | 'build' | 'deploy' | 'seo' | 'upgr
 export interface User {
   id: string;
   email: string;
-  user_metadata?: Record<string, unknown>;
+  is_verified: boolean;
+  has_password: boolean;
+  password_hash?: string;
+  otp_code?: string;
+  otp_expires_at?: Date;
+  otp_attempts?: number;
+  otp_locked_until?: Date;
+  last_otp_request_at?: Date;
+  created_at: Date;
+  updated_at: Date;
 }
 
 export interface Project {

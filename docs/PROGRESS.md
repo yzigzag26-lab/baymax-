@@ -77,12 +77,48 @@ Baymax is an AI-powered website creation, redesign, hosting, and management plat
 **Status**: In Progress
 **Target Date**: TBD
 
-**Tasks**:
-- [x] Supabase Auth integration (middleware created)
-- [x] JWT token verification (middleware created)
+**Completed Tasks**:
+- [x] Custom email OTP authentication system
+- [x] Password hashing with bcrypt (12 salt rounds)
+- [x] Custom JWT token generation and verification
+- [x] Email service with Gmail SMTP integration
+- [x] OTP generation, expiry (5 min), and attempt tracking
+- [x] Account lockout after 3 failed attempts (1 hour)
+- [x] Rate limiting for OTP requests (3 per hour)
+- [x] Auth routes (request OTP, verify OTP, set password, login)
+- [x] Updated auth middleware for custom JWT
+- [x] Database schema updated with auth fields
+
+**Pending Tasks**:
 - [ ] Role-based access control (RBAC)
 - [ ] Plan tier enforcement
 - [ ] API key management (for service-to-service)
+- [ ] Password reset flow
+- [ ] Email verification resend logic
+
+**Files Created**:
+- `src/services/auth.service.ts` - Authentication business logic
+- `src/services/email.service.ts` - Email sending with Gmail SMTP
+- `src/routes/auth.ts` - Authentication API routes
+- `src/db/migrations/002_add_auth_fields.sql` - Database migration for auth fields
+- Updated `src/middleware/auth.ts` - Custom JWT verification
+- Updated `src/config/index.ts` - Email and JWT configuration
+
+**Authentication Flow**:
+1. User enters email → POST /api/v1/auth/request-otp
+2. System checks if user exists, generates 6-digit OTP, sends via email
+3. User enters OTP → POST /api/v1/auth/verify-otp
+4. System verifies OTP, marks email as verified, returns JWT token
+5. New users set password → POST /api/v1/auth/set-password (with JWT)
+6. Returning users login → POST /api/v1/auth/login (email + password)
+
+**Security Features**:
+- OTP expires after 5 minutes
+- 3 failed attempts → 1 hour lockout
+- 3 OTP requests per hour per email
+- Passwords hashed with bcrypt (12 salt rounds)
+- JWT tokens with 7-day expiry
+- Email verification required before full access
 
 ---
 
@@ -250,6 +286,15 @@ Baymax is an AI-powered website creation, redesign, hosting, and management plat
 
 ## API Endpoints Summary
 
+### Authentication
+- `POST /api/v1/auth/request-otp` - Request OTP code
+- `POST /api/v1/auth/verify-otp` - Verify OTP and get JWT token
+- `POST /api/v1/auth/set-password` - Set password (requires JWT)
+- `POST /api/v1/auth/login` - Login with email and password
+- `GET /api/v1/auth/me` - Get current user profile
+- `POST /api/v1/auth/check-email` - Check if email is registered
+- `POST /api/v1/auth/resend-otp` - Resend OTP code
+
 ### Projects
 - `GET /api/v1/projects` - List all projects
 - `GET /api/v1/projects/:id` - Get project by ID
@@ -342,4 +387,4 @@ See `.env.example` for required configuration.
 
 ---
 
-*Last Updated: 2025-11-21 (Milestone 2 & 4 Complete)*
+*Last Updated: 2025-11-21 (Milestone 3: Custom Authentication Complete)*

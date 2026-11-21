@@ -1,14 +1,13 @@
 import Fastify from 'fastify';
 import cors from '@fastify/cors';
 import helmet from '@fastify/helmet';
-import jwt from '@fastify/jwt';
 import rateLimit from '@fastify/rate-limit';
 import swagger from '@fastify/swagger';
 import swaggerUi from '@fastify/swagger-ui';
 import multipart from '@fastify/multipart';
 import { config } from './config';
-import { authMiddleware } from './middleware/auth';
 import { errorHandler } from './middleware/error';
+import { authRoutes } from './routes/auth';
 import { projectRoutes } from './routes/projects';
 import { templateRoutes } from './routes/templates';
 import { blueprintRoutes } from './routes/blueprints';
@@ -40,10 +39,6 @@ await fastify.register(cors, {
 
 await fastify.register(helmet, {
   contentSecurityPolicy: false,
-});
-
-await fastify.register(jwt, {
-  secret: config.jwtSecret,
 });
 
 await fastify.register(rateLimit, {
@@ -99,6 +94,7 @@ fastify.get('/', async () => {
 });
 
 // Register routes
+await fastify.register(authRoutes, { prefix: '/api/v1' });
 await fastify.register(projectRoutes, { prefix: '/api/v1' });
 await fastify.register(templateRoutes, { prefix: '/api/v1' });
 await fastify.register(blueprintRoutes, { prefix: '/api/v1' });
