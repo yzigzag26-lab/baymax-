@@ -12,7 +12,7 @@ Baymax is an AI-powered website creation, redesign, hosting, and management plat
 - **API Documentation**: Swagger/OpenAPI
 
 ## Current Status
-🚧 **In Progress** - Foundation Setup
+🚧 **In Progress** - Core API Routes & Job Framework
 
 ## Milestones
 
@@ -46,51 +46,64 @@ Baymax is an AI-powered website creation, redesign, hosting, and management plat
 
 ---
 
-### Milestone 2: Core API Routes 🚧
-**Status**: In Progress
-**Target Date**: TBD
+### Milestone 2: Core API Routes ✅
+**Status**: Completed
+**Date**: 2025-11-21
 
-**Tasks**:
+**Completed Tasks**:
 - [x] Project routes (CRUD operations)
 - [x] Template routes (listing, filtering, categories)
 - [x] Blueprint routes (CRUD, approval workflow)
-- [ ] Website routes (creation, management)
-- [ ] Business profile routes
-- [ ] Job routes (status, cancellation)
-- [ ] Version routes (history, rollback)
-- [ ] Preview routes
+- [x] Website routes (creation, management)
+- [x] Business profile routes (create/update/get)
+- [x] Job routes (status, cancellation, statistics)
+- [x] Version routes (history, rollback, diff)
+- [x] Preview routes (create, list, status, latest)
 
 **Files Created**:
 - `src/routes/projects.ts` - Project management API
 - `src/routes/templates.ts` - Template catalog API
 - `src/routes/blueprints.ts` - Blueprint management API
+- `src/routes/websites.ts` - Website management API
+- `src/routes/jobs.ts` - Job management API
+- `src/routes/versions.ts` - Version control API
+- `src/routes/previews.ts` - Preview management API
+- `src/services/job.service.ts` - Job service layer
+- `src/jobs/processor.ts` - Job processor framework
 
 ---
 
 ### Milestone 3: Authentication & Authorization
-**Status**: Pending
+**Status**: In Progress
 **Target Date**: TBD
 
 **Tasks**:
-- [ ] Supabase Auth integration
-- [ ] JWT token verification
+- [x] Supabase Auth integration (middleware created)
+- [x] JWT token verification (middleware created)
 - [ ] Role-based access control (RBAC)
 - [ ] Plan tier enforcement
 - [ ] API key management (for service-to-service)
 
 ---
 
-### Milestone 4: Job Framework
-**Status**: Pending
-**Target Date**: TBD
+### Milestone 4: Job Framework ✅
+**Status**: Completed (Framework)
+**Date**: 2025-11-21
 
-**Tasks**:
-- [ ] Job queue implementation (Bull/BullMQ or custom)
-- [ ] Job workers for generation, build, deploy
-- [ ] Job status tracking
-- [ ] Job retry logic
-- [ ] Job cancellation
+**Completed Tasks**:
+- [x] Job queue implementation (custom polling-based)
+- [x] Job processor framework
+- [x] Job status tracking
+- [x] Job cancellation
+- [x] Job statistics
+- [ ] Job retry logic (service methods created)
 - [ ] Dead letter queue handling
+- [ ] Actual job processors for each type (stubs created)
+
+**Notes**:
+- Job processor uses polling-based approach (5-second intervals)
+- All job types have stub processors that need implementation
+- Job service includes methods for retry and cleanup
 
 ---
 
@@ -258,6 +271,39 @@ Baymax is an AI-powered website creation, redesign, hosting, and management plat
 - `POST /api/v1/blueprints/:id/approve` - Approve blueprint
 - `POST /api/v1/blueprints/:id/reject` - Reject blueprint
 
+### Websites
+- `POST /api/v1/websites` - Create website
+- `GET /api/v1/websites` - Get all websites
+- `GET /api/v1/projects/:projectId/websites` - Get project websites
+- `GET /api/v1/websites/:id` - Get website by ID
+- `PATCH /api/v1/websites/:id` - Update website
+- `DELETE /api/v1/websites/:id` - Archive website
+- `POST /api/v1/websites/:websiteId/business-profile` - Create/update business profile
+- `GET /api/v1/websites/:websiteId/business-profile` - Get business profile
+
+### Jobs
+- `GET /api/v1/jobs` - Get all jobs with filters
+- `GET /api/v1/jobs/:id` - Get job by ID
+- `POST /api/v1/jobs` - Create job
+- `POST /api/v1/jobs/:id/cancel` - Cancel job
+- `PATCH /api/v1/jobs/:id/status` - Update job status
+- `GET /api/v1/jobs/stats` - Get job statistics
+
+### Versions
+- `GET /api/v1/websites/:websiteId/versions` - Get website versions
+- `GET /api/v1/versions/:id` - Get version by ID
+- `POST /api/v1/websites/:websiteId/versions` - Create version
+- `POST /api/v1/websites/:websiteId/versions/:versionId/rollback` - Rollback to version
+- `GET /api/v1/websites/:websiteId/versions/:versionId/diff` - Get version diff
+
+### Previews
+- `POST /api/v1/websites/:websiteId/previews` - Create preview
+- `GET /api/v1/websites/:websiteId/previews` - Get website previews
+- `GET /api/v1/previews/:id` - Get preview by ID
+- `PATCH /api/v1/previews/:id/status` - Update preview status
+- `DELETE /api/v1/previews/:id` - Delete preview
+- `GET /api/v1/websites/:websiteId/previews/latest` - Get latest preview
+
 ## Database Schema
 
 ### Core Tables
@@ -277,11 +323,15 @@ Baymax is an AI-powered website creation, redesign, hosting, and management plat
 See `.env.example` for required configuration.
 
 ## Next Steps
-1. Complete core API routes (websites, jobs, versions)
-2. Implement authentication flow
-3. Set up job queue system
+1. ✅ Complete core API routes (websites, jobs, versions, previews)
+2. Implement plan tier enforcement and RBAC
+3. Implement actual job processors for each job type
 4. Begin AI gateway implementation
 5. Create comprehensive test suite
+6. Add billing and payment routes
+7. Add deployment and domain routes
+8. Add SEO routes
+9. Add upgrade (REA) routes
 
 ## Notes
 - All API endpoints require authentication except health check
@@ -292,4 +342,4 @@ See `.env.example` for required configuration.
 
 ---
 
-*Last Updated: 2025-11-21*
+*Last Updated: 2025-11-21 (Milestone 2 & 4 Complete)*

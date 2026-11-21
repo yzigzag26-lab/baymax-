@@ -12,6 +12,11 @@ import { errorHandler } from './middleware/error';
 import { projectRoutes } from './routes/projects';
 import { templateRoutes } from './routes/templates';
 import { blueprintRoutes } from './routes/blueprints';
+import { websiteRoutes } from './routes/websites';
+import { jobRoutes } from './routes/jobs';
+import { versionRoutes } from './routes/versions';
+import { previewRoutes } from './routes/previews';
+import { jobProcessor } from './jobs/processor';
 
 const fastify = Fastify({
   logger: {
@@ -97,6 +102,10 @@ fastify.get('/', async () => {
 await fastify.register(projectRoutes, { prefix: '/api/v1' });
 await fastify.register(templateRoutes, { prefix: '/api/v1' });
 await fastify.register(blueprintRoutes, { prefix: '/api/v1' });
+await fastify.register(websiteRoutes, { prefix: '/api/v1' });
+await fastify.register(jobRoutes, { prefix: '/api/v1' });
+await fastify.register(versionRoutes, { prefix: '/api/v1' });
+await fastify.register(previewRoutes, { prefix: '/api/v1' });
 
 // Start server
 const start = async () => {
@@ -104,6 +113,10 @@ const start = async () => {
     await fastify.listen({ port: config.port, host: '0.0.0.0' });
     fastify.log.info(`Server running on http://localhost:${config.port}`);
     fastify.log.info(`API Documentation: http://localhost:${config.port}/docs`);
+    
+    // Start job processor
+    jobProcessor.start();
+    fastify.log.info('Job processor started');
   } catch (err) {
     fastify.log.error(err);
     process.exit(1);
