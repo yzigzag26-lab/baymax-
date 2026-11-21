@@ -6,10 +6,11 @@ Baymax is an AI-powered website creation, redesign, hosting, and management plat
 ## Tech Stack
 - **Framework**: Fastify 4.x
 - **Language**: TypeScript 5.x
-- **Database**: PostgreSQL (Supabase)
-- **Auth**: Supabase Auth
+- **Database**: PostgreSQL (Supabase-managed)
+- **Auth**: Custom Email OTP + JWT (replaced Supabase Auth)
 - **Storage**: Supabase Storage
 - **API Documentation**: Swagger/OpenAPI
+- **Agent Skills**: Supabase & Postgres Best Practices installed
 
 ## Current Status
 🚧 **In Progress** - Core API Routes & Job Framework
@@ -363,6 +364,30 @@ Baymax is an AI-powered website creation, redesign, hosting, and management plat
 - `previews` - Preview deployments
 - `usage_events` - Usage tracking
 - `audit_events` - Audit logging
+
+### Database Best Practices Applied
+- ✅ Foreign key columns are indexed for performance
+- ✅ Composite indexes on frequently queried columns
+- ✅ Partial indexes for filtered queries
+- ✅ Timestamps with timezone for all tables
+- ✅ UUIDs for all primary keys
+- ✅ Soft deletes for projects
+- ⚠️ RLS policies to be implemented (if using Supabase Data API)
+
+### Supabase Agent Skills
+Installed skills for database optimization:
+- **supabase**: Comprehensive Supabase guidance
+- **supabase-postgres-best-practices**: Postgres performance rules
+  - Query performance (indexes, query optimization)
+  - Connection management
+  - Security & RLS
+  - Schema design
+  - Concurrency & locking
+  - Data access patterns
+  - Monitoring & diagnostics
+  - Advanced features
+
+Reference: `.agents/skills/` directory for detailed guidelines
 
 ## Environment Variables
 See `.env.example` for required configuration.
