@@ -16,6 +16,7 @@ import { jobRoutes } from './routes/jobs';
 import { versionRoutes } from './routes/versions';
 import { previewRoutes } from './routes/previews';
 import { usageRoutes } from './routes/usage';
+import { aiRoutes } from './routes/ai';
 import { jobProcessor } from './jobs/processor';
 
 const fastify = Fastify({
@@ -104,6 +105,7 @@ await fastify.register(jobRoutes, { prefix: '/api/v1' });
 await fastify.register(versionRoutes, { prefix: '/api/v1' });
 await fastify.register(previewRoutes, { prefix: '/api/v1' });
 await fastify.register(usageRoutes, { prefix: '/api/v1' });
+await fastify.register(aiRoutes, { prefix: '/api/v1' });
 
 // Start server
 const start = async () => {
