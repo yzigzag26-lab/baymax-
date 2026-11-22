@@ -19,6 +19,7 @@ export type UsageEventType =
   | 'deployment_created'
   | 'template_applied'
   | 'blueprint_created'
+  | 'blueprint_generated'
   | 'seo_optimization'
   | 'upgrade_analysis'
   | 'api_call';

@@ -343,14 +343,23 @@ export async function aiRoutes(fastify: FastifyInstance) {
       return reply.status(404).send({ error: 'Website not found' });
     }
 
-    // Get latest version and its source artifact
-    const latestVersion = await queryOne(
-      'SELECT * FROM website_versions WHERE website_id = $1 ORDER BY version_number DESC LIMIT 1',
-      [website_id]
-    );
+    // Get target version (specific or latest) and its source artifact
+    const baseVersion = version_id
+      ? await queryOne(
+          'SELECT * FROM website_versions WHERE id = $1 AND website_id = $2',
+          [version_id, website_id]
+        )
+      : await queryOne(
+          'SELECT * FROM website_versions WHERE website_id = $1 ORDER BY version_number DESC LIMIT 1',
+          [website_id]
+        );
 
-    const artifact = latestVersion?.source_artifact_id
-      ? await ArtifactService.getArtifactById(latestVersion.source_artifact_id)
+    if (version_id && !baseVersion) {
+      return reply.status(404).send({ error: 'Version not found' });
+    }
+
+    const artifact = baseVersion?.source_artifact_id
+      ? await ArtifactService.getArtifactById(baseVersion.source_artifact_id)
       : await ArtifactService.getLatestArtifact(website_id);
 
     if (!artifact) {
@@ -423,9 +432,9 @@ export async function aiRoutes(fastify: FastifyInstance) {
         [
           website_id,
           versionNumber,
-          latestVersion?.blueprint_id || blueprint?.id || null,
+          baseVersion?.blueprint_id || blueprint?.id || null,
           newArtifact.id,
-          latestVersion?.id || null,
+          baseVersion?.id || null,
           `AI edit: ${edit_request.slice(0, 200)}`,
           user.id,
         ]

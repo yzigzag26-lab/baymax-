@@ -26,7 +26,7 @@ export const planMiddleware = async (request: FastifyRequest, reply: FastifyRepl
     request.userPlan = entitlements;
     request.userPlanTier = planTier;
   } catch (error) {
-    request.log.error('Plan middleware error:', error);
+    request.log.error(`Plan middleware error: ${error instanceof Error ? error.message : String(error)}`);
     return reply.status(500).send({ error: 'Failed to load plan information' });
   }
 };

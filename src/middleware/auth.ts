@@ -1,6 +1,6 @@
 import { FastifyRequest, FastifyReply } from 'fastify';
 import { verifyToken, getUserById } from '../services/auth.service';
-import { getUserPlanEntitlements, getUserPlanTier } from '../services/plan.service';
+import { getUserPlanTier } from '../services/plan.service';
 import { PlanTier } from '../types';
 
 export interface AuthUser {
@@ -69,7 +69,7 @@ export const authMiddleware = async (request: FastifyRequest, reply: FastifyRepl
       plan_tier: planTier,
     };
   } catch (error) {
-    request.log.error('Auth middleware error:', error);
+    request.log.error(`Auth middleware error: ${error instanceof Error ? error.message : String(error)}`);
     return reply.status(401).send({
       error: 'Unauthorized',
       message: 'Authentication failed',
@@ -80,7 +80,7 @@ export const authMiddleware = async (request: FastifyRequest, reply: FastifyRepl
 /**
  * Optional authentication middleware - doesn't fail if no token
  */
-export const optionalAuthMiddleware = async (request: FastifyRequest, reply: FastifyReply) => {
+export const optionalAuthMiddleware = async (request: FastifyRequest) => {
   try {
     const authHeader = request.headers.authorization;
     
@@ -98,7 +98,7 @@ export const optionalAuthMiddleware = async (request: FastifyRequest, reply: Fas
       }
     }
   } catch (error) {
-    request.log.error('Optional auth middleware error:', error);
+    request.log.error(`Optional auth middleware error: ${error instanceof Error ? error.message : String(error)}`);
     // Continue without user on error
   }
 };

@@ -1,6 +1,6 @@
 import { JobService } from '../services/job.service';
 import { PreviewCleanupService } from '../services/preview-cleanup.service';
-import { Job, JobType } from '../types';
+import { Job } from '../types';
 
 /**
  * Job Processor
