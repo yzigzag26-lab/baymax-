@@ -29,7 +29,7 @@ export const PLAN_CONFIGS: Record<PlanTier, PlanEntitlements> = {
     can_use_existing_upgrade: false,
     can_use_guided_seo: false,
     ai_model_tier: 'economy',
-    max_ai_requests_per_day: 10, // enough for blueprint + generation + a few edits
+    max_ai_requests_per_day: 50, // enough for blueprint + generation + edits
     max_projects: 5,
     preview_retention_hours: 24,
     can_use_custom_domains: false,
@@ -178,7 +178,6 @@ export async function canAccessTemplate(
   templatePlanTier: PlanTier
 ): Promise<boolean> {
   const userPlanTier = await getUserPlanTier(userId);
-  const entitlements = PLAN_CONFIGS[userPlanTier];
 
   // Free users can only access free templates
   if (userPlanTier === 'free') {

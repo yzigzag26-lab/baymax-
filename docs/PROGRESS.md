@@ -172,15 +172,17 @@ Baymax is an AI-powered website creation, redesign, hosting, and management plat
 - `src/routes/ai.ts` - AI API routes
 
 **Features**:
-- **Plan-based routing**: Free→Groq `llama-3.1-8b-instant`, Business→Gemini `gemini-2.5-flash`/Groq 70B, Pro→OpenRouter `gpt-4o`/Gemini `2.5-pro`
-- **Cost tracking**: Per-token cost calculation per provider/model (verified against current pricing)
-- **Rate limiting**: Free=10 AI requests/day (enough for one generation flow); Business & Pro=unlimited (`-1`)
-- **Task-specific prompts**: Generation, editing, SEO, analysis, QA
-- **Provider fallback**: Automatic fallback to first available provider
-- **Usage tracking**: All AI requests logged with cost and latency
-- **JSON mode**: `responseFormat: 'json'` maps to provider-native JSON mode (Gemini `responseMimeType`, OpenAI-compatible `response_format`) + gateway-side JSON validation
-- **Timeouts**: All provider calls use AbortController with 120s default timeout
-- **System prompts**: Correctly passed to all providers (Gemini `systemInstruction`, chat `system` role)
+- **Planner/Executor architecture** (all tiers): `POST /ai/plan` runs the `planning` task — a peak reasoning model produces a Blueprint matching the `blueprints` schema, persisted as a `draft` row; `POST /ai/generate` requires an **approved** blueprint and the executor model returns a structured `{ files: { path: content } }` map (Next.js App Router + TS + Tailwind)
+- **Artifact persistence**: generated/edited file maps are stored in the `artifacts` table (SHA-256 checksum, size, metadata) and linked to `website_versions.source_artifact_id`; every generation/edit creates a new version and updates `websites.current_version_id`
+- **Real edit/SEO inputs**: `/ai/edit` loads the latest version's artifact files (bounded serialization), applies changes, and persists a new `chat`-origin version; `/ai/seo` analyzes real stored source
+- **Peak models per tier**: Business planning→`gemini-2.5-pro`, generation→`gpt-4o`; Pro planning→`o3`, generation/editing→`claude-sonnet-4.5`→`gpt-4o`
+- **Resilient fallback chains**: every task is an ordered candidate list — Business/Pro have 2–4 candidates across all three providers, so requests degrade gracefully and effectively never hard-fail while any provider key is configured
+- **Free tier**: `llama-3.1-8b-instant` primary with `gemini-2.5-flash-lite` fallback; 50 AI requests/day
+- **Business & Pro**: unlimited AI requests (`-1`)
+- **Cost tracking**: Per-token cost per provider/model (current pricing)
+- **JSON mode**: `responseFormat: 'json'` → provider-native JSON mode + gateway-side JSON validation
+- **Timeouts**: 120s AbortController on all provider calls
+- **System prompts**: Correctly passed to all providers
 
 **API Endpoints**:
 - `POST /api/v1/ai/generate` - Generate website from blueprint
@@ -394,7 +396,8 @@ Baymax is an AI-powered website creation, redesign, hosting, and management plat
 - `GET /api/v1/usage/plan` - Get plan information and entitlements
 
 ### AI Gateway
-- `POST /api/v1/ai/generate` - Generate website from blueprint
+- `POST /api/v1/ai/plan` - Generate website Blueprint from business brief (planner role, persists draft blueprint)
+- `POST /api/v1/ai/generate` - Generate website file map from approved blueprint (executor role)
 - `POST /api/v1/ai/edit` - Edit website with AI
 - `POST /api/v1/ai/seo` - Optimize SEO with AI
 - `GET /api/v1/ai/usage` - Get AI usage statistics
@@ -415,6 +418,7 @@ Baymax is an AI-powered website creation, redesign, hosting, and management plat
 - `previews` - Preview deployments
 - `usage_events` - Usage tracking
 - `audit_events` - Audit logging
+- `artifacts` - Generated source file maps / build outputs (migration 004)
 
 ### Database Best Practices Applied
 - ✅ Foreign key columns are indexed for performance

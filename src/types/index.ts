@@ -213,6 +213,18 @@ export interface WebsiteVersion {
   created_at: Date;
 }
 
+export interface Artifact {
+  id: string;
+  website_id: string;
+  type: 'source' | 'build' | 'seo';
+  files: Record<string, string>;
+  checksum?: string;
+  size_bytes?: number;
+  metadata?: Record<string, unknown>;
+  created_by?: string;
+  created_at: Date;
+}
+
 export interface Preview {
   id: string;
   website_id: string;

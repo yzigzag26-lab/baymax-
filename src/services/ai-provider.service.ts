@@ -70,7 +70,7 @@ export class AIProviderService {
       providers.push({
         provider: 'groq',
         apiKey: config.groqApiKey,
-        model: 'llama-3.1-70b-versatile',
+        model: 'llama-3.3-70b-versatile',
         baseUrl: 'https://api.groq.com/openai/v1',
       });
     }
@@ -171,7 +171,7 @@ export class AIProviderService {
       }
       messages.push({ role: 'user', content: request.prompt });
 
-      const model = request.model || 'llama-3.1-70b-versatile';
+      const model = request.model || 'llama-3.3-70b-versatile';
 
       const body: Record<string, any> = {
         model,

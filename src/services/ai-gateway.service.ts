@@ -3,10 +3,18 @@ import { getUserPlanEntitlements } from './plan.service';
 import { UsageService } from './usage.service';
 import { PlanTier } from '../types';
 
+export type AITask = 'planning' | 'generation' | 'editing' | 'seo' | 'analysis' | 'qa';
+
 export interface AIGatewayConfig {
   userId: string;
-  task: 'generation' | 'editing' | 'seo' | 'analysis' | 'qa';
+  task: AITask;
   planTier: PlanTier;
+}
+
+export interface ModelCandidate {
+  provider: 'gemini' | 'groq' | 'openrouter';
+  model: string;
+  maxTokens: number;
 }
 
 export interface AIGatewayResponse extends AIResponse {
@@ -22,29 +30,100 @@ export interface AIGatewayResponse extends AIResponse {
 }
 
 /**
- * Model configuration by plan tier and task
+ * Model chains by plan tier and task.
+ * Each task is an ordered list of candidates — the gateway tries each in
+ * order until one succeeds, so paid tiers degrade gracefully instead of failing.
+ * 'planning' = peak reasoning model produces the Blueprint/plan (JSON);
+ * 'generation'/'editing' = peak coding model executes it.
  */
-export const MODEL_CONFIGS = {
+export const MODEL_CONFIGS: Record<PlanTier, Record<AITask, ModelCandidate[]>> = {
   free: {
-    generation: { provider: 'groq', model: 'llama-3.1-8b-instant', maxTokens: 2048 },
-    editing: { provider: 'groq', model: 'llama-3.1-8b-instant', maxTokens: 1024 },
-    seo: { provider: 'groq', model: 'llama-3.1-8b-instant', maxTokens: 1024 },
-    analysis: { provider: 'groq', model: 'llama-3.1-8b-instant', maxTokens: 512 },
-    qa: { provider: 'groq', model: 'llama-3.1-8b-instant', maxTokens: 512 },
+    planning: [
+      { provider: 'groq', model: 'llama-3.1-8b-instant', maxTokens: 2048 },
+      { provider: 'gemini', model: 'gemini-2.5-flash-lite', maxTokens: 2048 },
+    ],
+    generation: [
+      { provider: 'groq', model: 'llama-3.1-8b-instant', maxTokens: 4096 },
+      { provider: 'gemini', model: 'gemini-2.5-flash-lite', maxTokens: 4096 },
+    ],
+    editing: [
+      { provider: 'groq', model: 'llama-3.1-8b-instant', maxTokens: 2048 },
+      { provider: 'gemini', model: 'gemini-2.5-flash-lite', maxTokens: 2048 },
+    ],
+    seo: [
+      { provider: 'groq', model: 'llama-3.1-8b-instant', maxTokens: 1024 },
+      { provider: 'gemini', model: 'gemini-2.5-flash-lite', maxTokens: 1024 },
+    ],
+    analysis: [
+      { provider: 'groq', model: 'llama-3.1-8b-instant', maxTokens: 1024 },
+      { provider: 'gemini', model: 'gemini-2.5-flash-lite', maxTokens: 1024 },
+    ],
+    qa: [
+      { provider: 'groq', model: 'llama-3.1-8b-instant', maxTokens: 1024 },
+      { provider: 'gemini', model: 'gemini-2.5-flash-lite', maxTokens: 1024 },
+    ],
   },
   business: {
-    generation: { provider: 'gemini', model: 'gemini-2.5-flash', maxTokens: 8192 },
-    editing: { provider: 'gemini', model: 'gemini-2.5-flash', maxTokens: 4096 },
-    seo: { provider: 'gemini', model: 'gemini-2.5-flash', maxTokens: 4096 },
-    analysis: { provider: 'groq', model: 'llama-3.1-70b-versatile', maxTokens: 1024 },
-    qa: { provider: 'groq', model: 'llama-3.1-70b-versatile', maxTokens: 1024 },
+    planning: [
+      { provider: 'gemini', model: 'gemini-2.5-pro', maxTokens: 4096 },
+      { provider: 'openrouter', model: 'openai/gpt-4o', maxTokens: 4096 },
+      { provider: 'groq', model: 'llama-3.3-70b-versatile', maxTokens: 4096 },
+    ],
+    generation: [
+      { provider: 'openrouter', model: 'openai/gpt-4o', maxTokens: 8192 },
+      { provider: 'gemini', model: 'gemini-2.5-pro', maxTokens: 8192 },
+      { provider: 'groq', model: 'llama-3.3-70b-versatile', maxTokens: 8192 },
+    ],
+    editing: [
+      { provider: 'openrouter', model: 'openai/gpt-4o', maxTokens: 4096 },
+      { provider: 'gemini', model: 'gemini-2.5-flash', maxTokens: 4096 },
+      { provider: 'groq', model: 'llama-3.3-70b-versatile', maxTokens: 4096 },
+    ],
+    seo: [
+      { provider: 'gemini', model: 'gemini-2.5-flash', maxTokens: 4096 },
+      { provider: 'openrouter', model: 'openai/gpt-4o', maxTokens: 4096 },
+      { provider: 'groq', model: 'llama-3.3-70b-versatile', maxTokens: 4096 },
+    ],
+    analysis: [
+      { provider: 'groq', model: 'llama-3.3-70b-versatile', maxTokens: 2048 },
+      { provider: 'gemini', model: 'gemini-2.5-flash', maxTokens: 2048 },
+    ],
+    qa: [
+      { provider: 'groq', model: 'llama-3.3-70b-versatile', maxTokens: 2048 },
+      { provider: 'gemini', model: 'gemini-2.5-flash', maxTokens: 2048 },
+    ],
   },
   pro: {
-    generation: { provider: 'openrouter', model: 'openai/gpt-4o', maxTokens: 8192 },
-    editing: { provider: 'openrouter', model: 'openai/gpt-4o', maxTokens: 4096 },
-    seo: { provider: 'openrouter', model: 'openai/gpt-4o', maxTokens: 4096 },
-    analysis: { provider: 'gemini', model: 'gemini-2.5-pro', maxTokens: 2048 },
-    qa: { provider: 'gemini', model: 'gemini-2.5-pro', maxTokens: 2048 },
+    planning: [
+      { provider: 'openrouter', model: 'openai/o3', maxTokens: 4096 },
+      { provider: 'gemini', model: 'gemini-2.5-pro', maxTokens: 4096 },
+      { provider: 'groq', model: 'llama-3.3-70b-versatile', maxTokens: 4096 },
+    ],
+    generation: [
+      { provider: 'openrouter', model: 'anthropic/claude-sonnet-4.5', maxTokens: 8192 },
+      { provider: 'openrouter', model: 'openai/gpt-4o', maxTokens: 8192 },
+      { provider: 'gemini', model: 'gemini-2.5-pro', maxTokens: 8192 },
+      { provider: 'groq', model: 'llama-3.3-70b-versatile', maxTokens: 8192 },
+    ],
+    editing: [
+      { provider: 'openrouter', model: 'anthropic/claude-sonnet-4.5', maxTokens: 4096 },
+      { provider: 'openrouter', model: 'openai/gpt-4o', maxTokens: 4096 },
+      { provider: 'gemini', model: 'gemini-2.5-pro', maxTokens: 4096 },
+      { provider: 'groq', model: 'llama-3.3-70b-versatile', maxTokens: 4096 },
+    ],
+    seo: [
+      { provider: 'openrouter', model: 'openai/gpt-4o', maxTokens: 4096 },
+      { provider: 'gemini', model: 'gemini-2.5-pro', maxTokens: 4096 },
+      { provider: 'groq', model: 'llama-3.3-70b-versatile', maxTokens: 4096 },
+    ],
+    analysis: [
+      { provider: 'gemini', model: 'gemini-2.5-pro', maxTokens: 2048 },
+      { provider: 'groq', model: 'llama-3.3-70b-versatile', maxTokens: 2048 },
+    ],
+    qa: [
+      { provider: 'gemini', model: 'gemini-2.5-pro', maxTokens: 2048 },
+      { provider: 'groq', model: 'llama-3.3-70b-versatile', maxTokens: 2048 },
+    ],
   },
 };
 
@@ -53,15 +132,19 @@ export const MODEL_CONFIGS = {
  */
 export const COST_CONFIGS = {
   gemini: {
+    'gemini-2.5-flash-lite': { input: 0.0001, output: 0.0004 },
     'gemini-2.5-flash': { input: 0.0003, output: 0.0025 },
     'gemini-2.5-pro': { input: 0.00125, output: 0.01 },
   },
   groq: {
     'llama-3.1-8b-instant': { input: 0.00005, output: 0.00008 },
     'llama-3.1-70b-versatile': { input: 0.00059, output: 0.00079 },
+    'llama-3.3-70b-versatile': { input: 0.00059, output: 0.00079 },
   },
   openrouter: {
     'openai/gpt-4o': { input: 0.0025, output: 0.01 },
+    'openai/o3': { input: 0.002, output: 0.008 },
+    'anthropic/claude-sonnet-4.5': { input: 0.003, output: 0.015 },
   },
 };
 
@@ -71,11 +154,11 @@ export const COST_CONFIGS = {
  */
 export class AIGatewayService {
   /**
-   * Get model configuration for user and task
+   * Get ordered model candidates for user and task
    */
-  static getModelConfig(planTier: PlanTier, task: string) {
+  static getModelCandidates(planTier: PlanTier, task: AITask): ModelCandidate[] {
     const planConfigs = MODEL_CONFIGS[planTier] || MODEL_CONFIGS.free;
-    return planConfigs[task as keyof typeof planConfigs] || planConfigs.generation;
+    return planConfigs[task] || planConfigs.generation;
   }
 
   /**
@@ -122,24 +205,31 @@ export class AIGatewayService {
       throw new Error('AI request limit reached for today');
     }
 
-    // Get model configuration
-    const modelConfig = this.getModelConfig(config.planTier, config.task);
+    // Get ordered model candidates for this plan/task
+    const candidates = this.getModelCandidates(config.planTier, config.task);
 
-    // Get available providers
+    // Get configured providers once
     const providers = AIProviderService.getAvailableProviders();
-    const provider = providers.find(p => p.provider === modelConfig.provider);
 
-    if (!provider) {
-      // Fallback to first available provider
-      if (providers.length === 0) {
-        throw new Error('No AI providers configured');
+    const errors: string[] = [];
+
+    for (const candidate of candidates) {
+      const provider = providers.find(p => p.provider === candidate.provider);
+      if (!provider) {
+        errors.push(`${candidate.provider}/${candidate.model}: provider not configured`);
+        continue;
       }
-      
-      const fallbackProvider = providers[0];
-      return this.makeRequestWithProvider(config, request, fallbackProvider, modelConfig);
+
+      try {
+        return await this.makeRequestWithProvider(config, request, provider, candidate);
+      } catch (error) {
+        const message = error instanceof Error ? error.message : String(error);
+        errors.push(`${candidate.provider}/${candidate.model}: ${message}`);
+        console.error(`AI candidate failed, trying fallback: ${candidate.provider}/${candidate.model} — ${message}`);
+      }
     }
 
-    return this.makeRequestWithProvider(config, request, provider, modelConfig);
+    throw new Error(`All AI providers failed for task '${config.task}': ${errors.join(' | ')}`);
   }
 
   /**
@@ -149,7 +239,7 @@ export class AIGatewayService {
     config: AIGatewayConfig,
     request: AIRequest,
     provider: AIProviderConfig,
-    modelConfig: any
+    modelConfig: ModelCandidate
   ): Promise<AIGatewayResponse> {
     const startTime = Date.now();
 
@@ -217,6 +307,29 @@ export class AIGatewayService {
   }
 
   /**
+   * Generate a website plan/Blueprint (planner role — peak reasoning model)
+   * Returns structured JSON describing sitemap, pages, design, and content plan.
+   */
+  static async generateBlueprintPlan(
+    userId: string,
+    planTier: PlanTier,
+    brief: string,
+    businessProfile?: any
+  ): Promise<AIGatewayResponse> {
+    const prompt = this.buildPlanningPrompt(brief, businessProfile);
+
+    return this.makeRequest(
+      { userId, task: 'planning', planTier },
+      {
+        prompt,
+        systemPrompt: 'You are an expert web architect and planner. Produce a detailed, structured website blueprint as JSON only. No markdown, no explanations.',
+        temperature: 0.4,
+        responseFormat: 'json',
+      }
+    );
+  }
+
+  /**
    * Generate website code from blueprint
    */
   static async generateWebsite(
@@ -231,9 +344,9 @@ export class AIGatewayService {
       { userId, task: 'generation', planTier },
       {
         prompt,
-        systemPrompt: 'You are an expert web developer. Generate clean, modern, responsive React/Next.js code based on the blueprint provided. Return only the code, no explanations.',
-        temperature: 0.7,
-        responseFormat: 'text',
+        systemPrompt: 'You are an expert Next.js/React developer. Generate a complete, production-quality website as a JSON file map. Return JSON only, no markdown fences, no explanations.',
+        temperature: 0.4,
+        responseFormat: 'json',
       }
     );
   }
@@ -254,9 +367,9 @@ export class AIGatewayService {
       { userId, task: 'editing', planTier },
       {
         prompt,
-        systemPrompt: 'You are an expert web developer. Apply the requested changes to the existing code. Return only the modified code, no explanations.',
-        temperature: 0.5,
-        responseFormat: 'text',
+        systemPrompt: 'You are an expert Next.js/React developer. Apply the requested changes to the existing file map and return the complete updated file map as JSON only. No markdown fences, no explanations.',
+        temperature: 0.3,
+        responseFormat: 'json',
       }
     );
   }
@@ -284,6 +397,70 @@ export class AIGatewayService {
   }
 
   /**
+   * Build planning prompt (planner role)
+   */
+  private static buildPlanningPrompt(brief: string, businessProfile?: any): string {
+    return `
+Create a website blueprint for the following project:
+
+## Business Brief:
+${brief}
+
+${businessProfile ? `## Business Profile:\n${JSON.stringify(businessProfile, null, 2)}\n` : ''}
+## Required Blueprint Schema (JSON only):
+{
+  "sitemap": {
+    "pages": [
+      { "id": "home", "title": "Home", "slug": "home", "path": "/", "order": 1 }
+    ],
+    "navigation": [
+      { "id": "nav-home", "label": "Home", "path": "/", "order": 1 }
+    ]
+  },
+  "pages": [
+    {
+      "id": "home",
+      "title": "Home",
+      "slug": "home",
+      "sections": [
+        { "id": "hero", "type": "hero", "component_id": "HeroSection", "props": {}, "order": 1 }
+      ],
+      "seo_title": "...",
+      "seo_description": "..."
+    }
+  ],
+  "design_tokens": {
+    "colors": { "primary": "#hex", "secondary": "#hex", "accent": "#hex", "background": "#hex", "text": "#hex" },
+    "typography": { "font_family": "font-name", "font_sizes": { "h1": "...", "body": "..." } },
+    "spacing": { "section": "...", "container": "..." },
+    "border_radius": "..."
+  },
+  "components": [
+    { "id": "HeroSection", "name": "HeroSection", "version": "1.0.0", "props_schema": {} }
+  ],
+  "content_plan": {
+    "pages": {
+      "home": { "headline": "...", "subheadline": "...", "sections_content": {} }
+    }
+  },
+  "seo_fields": {
+    "title": "...",
+    "description": "...",
+    "keywords": ["kw1", "kw2"]
+  },
+  "integrations": [],
+  "constraints": {}
+}
+
+Rules:
+- Always include Home, About, Contact pages plus any pages the brief requires
+- sitemap.pages, pages, navigation, and components must have matching ids/paths
+- Keep it realistic for a small business website
+- Valid JSON only
+    `.trim();
+  }
+
+  /**
    * Build generation prompt
    */
   private static buildGenerationPrompt(blueprint: any, businessProfile: any): string {
@@ -296,15 +473,29 @@ ${JSON.stringify(businessProfile, null, 2)}
 ## Blueprint:
 ${JSON.stringify(blueprint, null, 2)}
 
-## Requirements:
-- Generate React/Next.js components
-- Include all pages from the blueprint
-- Implement responsive design
-- Use the design tokens provided
-- Include proper SEO meta tags
-- Ensure accessibility compliance
+## Output Format (JSON only):
+{
+  "files": {
+    "package.json": "{ ... }",
+    "next.config.js": "...",
+    "src/app/layout.tsx": "...",
+    "src/app/globals.css": "...",
+    "src/app/page.tsx": "...",
+    "src/app/about/page.tsx": "...",
+    "src/app/contact/page.tsx": "...",
+    "src/components/Nav.tsx": "...",
+    "src/components/Footer.tsx": "..."
+  }
+}
 
-Return the complete code structure with all necessary files.
+## Requirements:
+- Valid JSON object with a "files" key mapping relative file paths to file contents
+- Next.js App Router, React, TypeScript, Tailwind CSS
+- Include all pages from the blueprint sitemap
+- Responsive design using the blueprint design_tokens
+- SEO meta tags via Next.js metadata API
+- Realistic placeholder content from the content_plan (no lorem ipsum)
+- No external API calls or secrets in generated code
     `.trim();
   }
 
@@ -324,11 +515,19 @@ ${editRequest}
 ## Blueprint Context:
 ${JSON.stringify(blueprint, null, 2)}
 
+## Output Format (JSON only):
+{
+  "files": {
+    "relative/path": "complete updated file content",
+    "...": "..."
+  }
+}
+
 ## Instructions:
+- Return the COMPLETE file map with all files (not just changed ones)
 - Apply only the requested changes
-- Maintain existing functionality
-- Ensure code quality and best practices
-- Return the complete modified code
+- Maintain existing functionality and file structure
+- Keep Next.js App Router + TypeScript + Tailwind conventions
     `.trim();
   }
 
