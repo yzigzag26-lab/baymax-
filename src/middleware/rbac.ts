@@ -158,7 +158,11 @@ export const checkAIRequestLimit = async (request: FastifyRequest, reply: Fastif
   }
 
   const entitlements = request.userPlan || await getUserPlanEntitlements(request.user.id);
-  
+
+  if (entitlements.max_ai_requests_per_day === -1) {
+    return; // unlimited
+  }
+
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 

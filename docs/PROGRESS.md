@@ -172,12 +172,15 @@ Baymax is an AI-powered website creation, redesign, hosting, and management plat
 - `src/routes/ai.ts` - AI API routes
 
 **Features**:
-- **Plan-based routing**: Free→Groq economy, Business→Gemini standard, Pro→OpenRouter premium
-- **Cost tracking**: Per-token cost calculation for each provider
-- **Rate limiting**: Daily AI request limits per plan
+- **Plan-based routing**: Free→Groq `llama-3.1-8b-instant`, Business→Gemini `gemini-2.5-flash`/Groq 70B, Pro→OpenRouter `gpt-4o`/Gemini `2.5-pro`
+- **Cost tracking**: Per-token cost calculation per provider/model (verified against current pricing)
+- **Rate limiting**: Free=10 AI requests/day (enough for one generation flow); Business & Pro=unlimited (`-1`)
 - **Task-specific prompts**: Generation, editing, SEO, analysis, QA
-- **Provider fallback**: Automatic fallback to available providers
+- **Provider fallback**: Automatic fallback to first available provider
 - **Usage tracking**: All AI requests logged with cost and latency
+- **JSON mode**: `responseFormat: 'json'` maps to provider-native JSON mode (Gemini `responseMimeType`, OpenAI-compatible `response_format`) + gateway-side JSON validation
+- **Timeouts**: All provider calls use AbortController with 120s default timeout
+- **System prompts**: Correctly passed to all providers (Gemini `systemInstruction`, chat `system` role)
 
 **API Endpoints**:
 - `POST /api/v1/ai/generate` - Generate website from blueprint

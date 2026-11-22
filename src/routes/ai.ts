@@ -315,10 +315,12 @@ export async function aiRoutes(fastify: FastifyInstance) {
 
     const stats = await AIGatewayService.getUsageStats(user.id, days);
 
+    const maxDaily = request.userPlan?.max_ai_requests_per_day ?? 0;
+
     return {
       stats,
       limits: {
-        daily_requests: request.userPlan?.max_ai_requests_per_day || 0,
+        daily_requests: maxDaily === -1 ? 'unlimited' : maxDaily,
         plan_tier: request.userPlan?.plan_tier || 'free',
       },
     };

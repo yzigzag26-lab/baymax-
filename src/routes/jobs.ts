@@ -184,7 +184,7 @@ export async function jobRoutes(fastify: FastifyInstance) {
     // Check AI request limit for AI-related jobs
     if (['generation', 'edit', 'seo', 'upgrade'].includes(type)) {
       const entitlements = request.userPlan;
-      if (entitlements) {
+      if (entitlements && entitlements.max_ai_requests_per_day !== -1) {
         const today = new Date();
         today.setHours(0, 0, 0, 0);
 

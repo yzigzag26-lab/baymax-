@@ -37,8 +37,11 @@ export async function usageRoutes(fastify: FastifyInstance) {
       limits: {
         ai_requests_today: {
           used: todayAIRequests,
-          limit: entitlements?.max_ai_requests_per_day || 0,
-          remaining: Math.max(0, (entitlements?.max_ai_requests_per_day || 0) - todayAIRequests),
+          limit: entitlements?.max_ai_requests_per_day ?? 0,
+          unlimited: entitlements?.max_ai_requests_per_day === -1,
+          remaining: entitlements?.max_ai_requests_per_day === -1
+            ? null
+            : Math.max(0, (entitlements?.max_ai_requests_per_day || 0) - todayAIRequests),
         },
         websites: {
           limit: entitlements?.max_websites || 0,

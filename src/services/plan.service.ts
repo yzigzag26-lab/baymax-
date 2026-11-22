@@ -29,7 +29,7 @@ export const PLAN_CONFIGS: Record<PlanTier, PlanEntitlements> = {
     can_use_existing_upgrade: false,
     can_use_guided_seo: false,
     ai_model_tier: 'economy',
-    max_ai_requests_per_day: 10,
+    max_ai_requests_per_day: 10, // enough for blueprint + generation + a few edits
     max_projects: 5,
     preview_retention_hours: 24,
     can_use_custom_domains: false,
@@ -43,7 +43,7 @@ export const PLAN_CONFIGS: Record<PlanTier, PlanEntitlements> = {
     can_use_existing_upgrade: true,
     can_use_guided_seo: true,
     ai_model_tier: 'standard',
-    max_ai_requests_per_day: 50,
+    max_ai_requests_per_day: -1, // unlimited
     max_projects: 20,
     preview_retention_hours: 168, // 7 days
     can_use_custom_domains: true,
@@ -57,7 +57,7 @@ export const PLAN_CONFIGS: Record<PlanTier, PlanEntitlements> = {
     can_use_existing_upgrade: true,
     can_use_guided_seo: true,
     ai_model_tier: 'premium',
-    max_ai_requests_per_day: 200,
+    max_ai_requests_per_day: -1, // unlimited
     max_projects: -1, // unlimited
     preview_retention_hours: -1, // permanent
     can_use_custom_domains: true,
@@ -150,7 +150,11 @@ export async function hasReachedProjectLimit(userId: string): Promise<boolean> {
  */
 export async function hasReachedAIRequestLimit(userId: string): Promise<boolean> {
   const entitlements = await getUserPlanEntitlements(userId);
-  
+
+  if (entitlements.max_ai_requests_per_day === -1) {
+    return false; // Unlimited
+  }
+
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 

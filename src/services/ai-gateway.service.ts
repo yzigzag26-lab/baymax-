@@ -33,34 +33,35 @@ export const MODEL_CONFIGS = {
     qa: { provider: 'groq', model: 'llama-3.1-8b-instant', maxTokens: 512 },
   },
   business: {
-    generation: { provider: 'gemini', model: 'gemini-pro', maxTokens: 4096 },
-    editing: { provider: 'gemini', model: 'gemini-pro', maxTokens: 2048 },
-    seo: { provider: 'gemini', model: 'gemini-pro', maxTokens: 2048 },
+    generation: { provider: 'gemini', model: 'gemini-2.5-flash', maxTokens: 8192 },
+    editing: { provider: 'gemini', model: 'gemini-2.5-flash', maxTokens: 4096 },
+    seo: { provider: 'gemini', model: 'gemini-2.5-flash', maxTokens: 4096 },
     analysis: { provider: 'groq', model: 'llama-3.1-70b-versatile', maxTokens: 1024 },
     qa: { provider: 'groq', model: 'llama-3.1-70b-versatile', maxTokens: 1024 },
   },
   pro: {
-    generation: { provider: 'openrouter', model: 'openai/gpt-4', maxTokens: 8192 },
-    editing: { provider: 'openrouter', model: 'openai/gpt-4', maxTokens: 4096 },
-    seo: { provider: 'openrouter', model: 'openai/gpt-4', maxTokens: 4096 },
-    analysis: { provider: 'gemini', model: 'gemini-pro', maxTokens: 2048 },
-    qa: { provider: 'gemini', model: 'gemini-pro', maxTokens: 2048 },
+    generation: { provider: 'openrouter', model: 'openai/gpt-4o', maxTokens: 8192 },
+    editing: { provider: 'openrouter', model: 'openai/gpt-4o', maxTokens: 4096 },
+    seo: { provider: 'openrouter', model: 'openai/gpt-4o', maxTokens: 4096 },
+    analysis: { provider: 'gemini', model: 'gemini-2.5-pro', maxTokens: 2048 },
+    qa: { provider: 'gemini', model: 'gemini-2.5-pro', maxTokens: 2048 },
   },
 };
 
 /**
- * Cost per 1K tokens by provider and model
+ * Cost per 1K tokens by provider and model (USD)
  */
 export const COST_CONFIGS = {
   gemini: {
-    'gemini-pro': { input: 0.00025, output: 0.0005 }, // per 1K tokens
+    'gemini-2.5-flash': { input: 0.0003, output: 0.0025 },
+    'gemini-2.5-pro': { input: 0.00125, output: 0.01 },
   },
   groq: {
     'llama-3.1-8b-instant': { input: 0.00005, output: 0.00008 },
     'llama-3.1-70b-versatile': { input: 0.00059, output: 0.00079 },
   },
   openrouter: {
-    'openai/gpt-4': { input: 0.03, output: 0.06 }, // per 1K tokens
+    'openai/gpt-4o': { input: 0.0025, output: 0.01 },
   },
 };
 
@@ -98,6 +99,11 @@ export class AIGatewayService {
    */
   static async canMakeAIRequest(userId: string, planTier: PlanTier): Promise<boolean> {
     const entitlements = await getUserPlanEntitlements(userId);
+
+    if (entitlements.max_ai_requests_per_day === -1) {
+      return true; // unlimited
+    }
+
     const todayAIRequests = await UsageService.getTodayAIRequests(userId);
 
     return todayAIRequests < entitlements.max_ai_requests_per_day;
@@ -151,11 +157,21 @@ export class AIGatewayService {
       // Enhance request with model config
       const enhancedRequest: AIRequest = {
         ...request,
+        model: modelConfig.model,
         maxTokens: modelConfig.maxTokens,
       };
 
       // Call provider
       const response = await AIProviderService.callProvider(provider, enhancedRequest);
+
+      // Validate structured output when JSON was requested
+      if (request.responseFormat === 'json' && response.content) {
+        try {
+          JSON.parse(response.content);
+        } catch {
+          throw new Error(`AI provider returned invalid JSON for task '${config.task}'`);
+        }
+      }
 
       // Calculate cost
       const cost = this.calculateCost(
