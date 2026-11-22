@@ -130,7 +130,7 @@ export const MODEL_CONFIGS: Record<PlanTier, Record<AITask, ModelCandidate[]>> =
 /**
  * Cost per 1K tokens by provider and model (USD)
  */
-export const COST_CONFIGS = {
+export const COST_CONFIGS: Record<string, Record<string, { input: number; output: number }>> = {
   gemini: {
     'gemini-2.5-flash-lite': { input: 0.0001, output: 0.0004 },
     'gemini-2.5-flash': { input: 0.0003, output: 0.0025 },
@@ -180,7 +180,7 @@ export class AIGatewayService {
   /**
    * Check if user can make AI request
    */
-  static async canMakeAIRequest(userId: string, planTier: PlanTier): Promise<boolean> {
+  static async canMakeAIRequest(userId: string, _planTier: PlanTier): Promise<boolean> {
     const entitlements = await getUserPlanEntitlements(userId);
 
     if (entitlements.max_ai_requests_per_day === -1) {

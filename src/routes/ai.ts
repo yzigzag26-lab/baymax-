@@ -132,7 +132,7 @@ export async function aiRoutes(fastify: FastifyInstance) {
         metadata: response.gatewayMetadata,
       };
     } catch (error) {
-      request.log.error('AI planning error:', error);
+      request.log.error(`AI planning error: ${error instanceof Error ? error.message : String(error)}`);
       return reply.status(500).send({
         error: 'AI Planning Failed',
         message: error instanceof Error ? error.message : 'Unknown error',
@@ -298,7 +298,7 @@ export async function aiRoutes(fastify: FastifyInstance) {
         metadata: response.gatewayMetadata,
       };
     } catch (error) {
-      request.log.error('AI generation error:', error);
+      request.log.error(`AI generation error: ${error instanceof Error ? error.message : String(error)}`);
       return reply.status(500).send({
         error: 'AI Generation Failed',
         message: error instanceof Error ? error.message : 'Unknown error',
@@ -460,7 +460,7 @@ export async function aiRoutes(fastify: FastifyInstance) {
         metadata: response.gatewayMetadata,
       };
     } catch (error) {
-      request.log.error('AI edit error:', error);
+      request.log.error(`AI edit error: ${error instanceof Error ? error.message : String(error)}`);
       return reply.status(500).send({
         error: 'AI Edit Failed',
         message: error instanceof Error ? error.message : 'Unknown error',
@@ -547,7 +547,7 @@ export async function aiRoutes(fastify: FastifyInstance) {
         metadata: response.gatewayMetadata,
       };
     } catch (error) {
-      request.log.error('AI SEO error:', error);
+      request.log.error(`AI SEO error: ${error instanceof Error ? error.message : String(error)}`);
       return reply.status(500).send({
         error: 'AI SEO Failed',
         message: error instanceof Error ? error.message : 'Unknown error',
@@ -600,7 +600,7 @@ export async function aiRoutes(fastify: FastifyInstance) {
       description: 'Get list of configured AI providers',
       security: [{ bearerAuth: [] }],
     },
-  }, async (request, reply) => {
+  }, async () => {
     const providers = AIProviderService.getAvailableProviders();
 
     return {
@@ -621,7 +621,7 @@ export async function aiRoutes(fastify: FastifyInstance) {
       description: 'Check health status of AI providers',
       security: [{ bearerAuth: [] }],
     },
-  }, async (request, reply) => {
+  }, async () => {
     const health = await AIGatewayService.checkProviderHealth();
 
     return {

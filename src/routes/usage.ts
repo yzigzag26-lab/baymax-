@@ -2,7 +2,6 @@ import { FastifyInstance } from 'fastify';
 import { authMiddleware } from '../middleware/auth';
 import { planMiddleware } from '../middleware/rbac';
 import { UsageService, UsageEventType } from '../services/usage.service';
-import { getUserPlanEntitlements } from '../services/plan.service';
 
 export async function usageRoutes(fastify: FastifyInstance) {
   // Get user usage statistics

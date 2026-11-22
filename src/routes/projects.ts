@@ -3,7 +3,7 @@ import { z } from 'zod';
 import { authMiddleware } from '../middleware/auth';
 import { planMiddleware, checkProjectLimit } from '../middleware/rbac';
 import { query, queryOne } from '../db';
-import { Project, PlanTier } from '../types';
+import { Project } from '../types';
 
 const createProjectSchema = z.object({
   name: z.string().min(1).max(255),

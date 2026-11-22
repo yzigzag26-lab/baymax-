@@ -1,79 +1,7 @@
 import { FastifyInstance } from 'fastify';
-import { z } from 'zod';
 import { authMiddleware } from '../middleware/auth';
 import { query, queryOne } from '../db';
-import { Blueprint, BlueprintStatus } from '../types';
-
-const blueprintSchema = z.object({
-  sitemap: z.object({
-    pages: z.array(z.object({
-      id: z.string(),
-      title: z.string(),
-      slug: z.string(),
-      path: z.string(),
-      parent_id: z.string().optional(),
-      order: z.number(),
-    })),
-    navigation: z.array(z.object({
-      id: z.string(),
-      label: z.string(),
-      path: z.string(),
-      order: z.number(),
-      children: z.array(z.any()).optional(),
-    })),
-  }),
-  pages: z.array(z.object({
-    id: z.string(),
-    title: z.string(),
-    slug: z.string(),
-    sections: z.array(z.object({
-      id: z.string(),
-      type: z.string(),
-      component_id: z.string(),
-      props: z.record(z.any()),
-      order: z.number(),
-    })),
-    seo_title: z.string().optional(),
-    seo_description: z.string().optional(),
-  })),
-  design_tokens: z.object({
-    colors: z.object({
-      primary: z.string(),
-      secondary: z.string(),
-      accent: z.string(),
-      background: z.string(),
-      text: z.string(),
-    }),
-    typography: z.object({
-      font_family: z.string(),
-      font_sizes: z.record(z.string()),
-    }),
-    spacing: z.record(z.string()),
-    border_radius: z.string(),
-  }),
-  components: z.array(z.object({
-    id: z.string(),
-    name: z.string(),
-    version: z.string(),
-    props_schema: z.record(z.any()),
-  })),
-  content_plan: z.object({
-    pages: z.record(z.any()),
-  }),
-  seo_fields: z.object({
-    title: z.string().optional(),
-    description: z.string().optional(),
-    keywords: z.array(z.string()).optional(),
-    og_image: z.string().optional(),
-    canonical_url: z.string().optional(),
-  }).optional(),
-  integrations: z.array(z.object({
-    id: z.string(),
-    type: z.string(),
-    config: z.record(z.any()),
-  })).optional(),
-  constraints: z.record(z.any()).optional(),
-});
+import { Blueprint } from '../types';
 
 export async function blueprintRoutes(fastify: FastifyInstance) {
   // Create blueprint for website
@@ -117,6 +45,8 @@ export async function blueprintRoutes(fastify: FastifyInstance) {
     );
     const version = versionResult?.max_version || 1;
 
+    const body = request.body as Record<string, any> | undefined;
+
     // Create blueprint
     const blueprint = await queryOne<Blueprint>(
       `INSERT INTO blueprints (website_id, version, status, sitemap, pages, design_tokens, components, content_plan, seo_fields, integrations, constraints)
@@ -126,14 +56,14 @@ export async function blueprintRoutes(fastify: FastifyInstance) {
         websiteId,
         version,
         'draft',
-        JSON.stringify(request.body?.sitemap || {}),
-        JSON.stringify(request.body?.pages || []),
-        JSON.stringify(request.body?.design_tokens || {}),
-        JSON.stringify(request.body?.components || []),
-        JSON.stringify(request.body?.content_plan || {}),
-        JSON.stringify(request.body?.seo_fields || null),
-        JSON.stringify(request.body?.integrations || null),
-        JSON.stringify(request.body?.constraints || null),
+        JSON.stringify(body?.sitemap || {}),
+        JSON.stringify(body?.pages || []),
+        JSON.stringify(body?.design_tokens || {}),
+        JSON.stringify(body?.components || []),
+        JSON.stringify(body?.content_plan || {}),
+        JSON.stringify(body?.seo_fields || null),
+        JSON.stringify(body?.integrations || null),
+        JSON.stringify(body?.constraints || null),
       ]
     );
 

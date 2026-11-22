@@ -36,7 +36,7 @@ export function getSupabaseAnonClient(): SupabaseClient {
 export async function testSupabaseConnection(): Promise<boolean> {
   try {
     const supabase = getSupabaseClient();
-    const { data, error } = await supabase.from('users').select('count').limit(1);
+    const { error } = await supabase.from('users').select('count').limit(1);
     
     if (error) {
       console.error('Supabase connection test failed:', error);

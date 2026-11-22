@@ -1,4 +1,4 @@
-import { query } from '../db';
+import { query, queryOne } from '../db';
 
 /**
  * Preview Cleanup Service

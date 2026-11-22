@@ -211,7 +211,7 @@ export async function authRoutes(fastify: FastifyInstance) {
         required: ['email'],
       },
     },
-  }, async (request, reply) => {
+  }, async (request) => {
     const { email } = requestOTPSchema.parse(request.body);
 
     const user = await getUserByEmail(email);

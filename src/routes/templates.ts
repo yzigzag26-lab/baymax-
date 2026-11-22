@@ -3,7 +3,7 @@ import { z } from 'zod';
 import { authMiddleware } from '../middleware/auth';
 import { planMiddleware } from '../middleware/rbac';
 import { query, queryOne } from '../db';
-import { Template, PlanTier } from '../types';
+import { Template } from '../types';
 import { canAccessTemplate } from '../services/plan.service';
 
 const templateQuerySchema = z.object({

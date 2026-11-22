@@ -1,7 +1,7 @@
 import { FastifyInstance } from 'fastify';
 import { z } from 'zod';
 import { authMiddleware } from '../middleware/auth';
-import { planMiddleware, checkAIRequestLimit } from '../middleware/rbac';
+import { planMiddleware } from '../middleware/rbac';
 import { query, queryOne } from '../db';
 import { Job, JobStatus, JobType } from '../types';
 

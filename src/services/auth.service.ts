@@ -116,14 +116,6 @@ export async function requestOTP(email: string): Promise<{ success: boolean; mes
       const oneHourAgo = new Date(Date.now() - OTP_RATE_LIMIT_MINUTES * 60 * 1000);
       
       if (lastRequest > oneHourAgo) {
-        // Count requests in the last hour
-        const recentRequests = await queryOne<{ count: string }>(
-          `SELECT COUNT(*) as count FROM users 
-           WHERE email = $1 
-           AND last_otp_request_at > $2`,
-          [email, oneHourAgo.toISOString()]
-        );
-
         // Note: This is a simplified check. In production, you'd want a separate table for OTP requests
         // For now, we'll allow 3 requests per hour per email
       }
