@@ -19,7 +19,7 @@ const configSchema = z.object({
   
   // Email Configuration (Gmail SMTP)
   emailUser: z.string().email(),
-  emailAppPassword: z.string(),
+  emailAppPassword: z.string().optional(),
   emailFrom: z.string().default('Baymax <baymaxai43@gmail.com>'),
   
   // CORS

@@ -2,13 +2,16 @@ import nodemailer from 'nodemailer';
 import { config } from '../config';
 
 // Create reusable transporter object using Gmail SMTP
-const transporter = nodemailer.createTransport({
-  service: 'gmail',
-  auth: {
-    user: config.emailUser,
-    pass: config.emailAppPassword,
-  },
-});
+// Null when no app password is configured — OTP emails are skipped in dev
+const transporter = config.emailAppPassword
+  ? nodemailer.createTransport({
+      service: 'gmail',
+      auth: {
+        user: config.emailUser,
+        pass: config.emailAppPassword,
+      },
+    })
+  : null;
 
 export interface EmailOptions {
   to: string;
@@ -21,6 +24,14 @@ export interface EmailOptions {
  * Send email using Gmail SMTP
  */
 export async function sendEmail(options: EmailOptions): Promise<void> {
+  if (!transporter) {
+    if (config.nodeEnv === 'production') {
+      throw new Error('Email service not configured: EMAIL_APP_PASSWORD is missing');
+    }
+    console.warn(`[email:dev] skipped send to ${options.to} — "${options.subject}"`);
+    return;
+  }
+
   const mailOptions = {
     from: config.emailFrom,
     to: options.to,
@@ -42,6 +53,11 @@ export async function sendEmail(options: EmailOptions): Promise<void> {
  * Send OTP verification email
  */
 export async function sendOTPEmail(email: string, otpCode: string): Promise<void> {
+  // Dev fallback: surface the OTP in server logs when Gmail isn't configured
+  if (!transporter && config.nodeEnv !== 'production') {
+    console.log(`[email:dev] OTP for ${email}: ${otpCode}`);
+  }
+
   const subject = 'Baymax - Your Verification Code';
   const html = `
     <!DOCTYPE html>
@@ -95,6 +111,11 @@ export async function sendOTPEmail(email: string, otpCode: string): Promise<void
  * Test email connection
  */
 export async function testEmailConnection(): Promise<boolean> {
+  if (!transporter) {
+    console.warn('Email connection test skipped: EMAIL_APP_PASSWORD not configured');
+    return false;
+  }
+
   try {
     await transporter.verify();
     console.log('Email connection verified successfully');
